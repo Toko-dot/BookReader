@@ -1,0 +1,184 @@
+package com.zy.reader.widget.anim;
+
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
+import android.graphics.Canvas;
+import android.graphics.drawable.GradientDrawable;
+import android.view.MotionEvent;
+import android.view.animation.LinearInterpolator;
+
+import androidx.annotation.NonNull;
+
+import com.zy.reader.utils.PageFactory;
+import com.zy.reader.widget.PageWidget;
+
+public class CoverPageAnimation extends PageAnimation {
+    private float firstDownX;
+    private float firstDownY;
+    private float moveX;
+    private int curAction = MotionEvent.ACTION_UP;
+    private boolean isAnimation = false;
+    private GradientDrawable mBackShadowDrawableLR;
+
+    public CoverPageAnimation(PageWidget pageWidget) {
+        super(pageWidget);
+        init();
+    }
+
+    private void init() {
+        int[] mBackShadowColors = new int[]{0x66000000, 0x00000000};
+        mBackShadowDrawableLR = new GradientDrawable(
+                GradientDrawable.Orientation.LEFT_RIGHT, mBackShadowColors);
+        mBackShadowDrawableLR.setGradientType(GradientDrawable.LINEAR_GRADIENT);
+    }
+
+    @Override
+    public void draw(Canvas canvas) {
+        if (curAction == MotionEvent.ACTION_MOVE) {
+            if (moveX < 0) {
+                canvas.drawBitmap(pageWidget.getNextPage(), 0, 0, null);
+                canvas.drawBitmap(pageWidget.getCurPage(), moveX, 0, null);
+                addShadow((int) (pageWidget.getWidth() - Math.abs(moveX)), canvas);
+            } else if (moveX == 0) {
+                canvas.drawBitmap(pageWidget.getCurPage(), 0, 0, null);
+            } else if (moveX > 0) {
+                canvas.drawBitmap(pageWidget.getCurPage(), 0, 0, null);
+                canvas.drawBitmap(pageWidget.getPrePage(), moveX - pageWidget.getWidth(), 0, null);
+                addShadow((int) moveX, canvas);
+            }
+        } else {
+            if (isAnimation) {
+                if (moveX < 0) {
+                    canvas.drawBitmap(pageWidget.getCurPage(), 0, 0, null);
+                    float left = Math.min(moveX, 0);
+                    canvas.drawBitmap(pageWidget.getPrePage(), left, 0, null);
+                    addShadow((int) (pageWidget.getWidth() - Math.abs(moveX)), canvas);
+                } else if (moveX == 0) {
+
+                } else if (moveX > 0) {
+                    canvas.drawBitmap(pageWidget.getNextPage(), 0, 0, null);
+                    float left = Math.min(moveX - pageWidget.getWidth(), 0);
+                    canvas.drawBitmap(pageWidget.getCurPage(), left, 0, null);
+                    addShadow((int) moveX, canvas);
+                }
+            } else {
+                canvas.drawBitmap(pageWidget.getCurPage(), 0, 0, null);
+            }
+        }
+    }
+
+    public void addShadow(int left, Canvas canvas) {
+        mBackShadowDrawableLR.setBounds(left, 0, left + Math.min(30, Math.abs(((int) moveX))), pageWidget.getHeight());
+        mBackShadowDrawableLR.draw(canvas);
+    }
+
+    @Override
+    public boolean handleTouchEvent(MotionEvent event) {
+        if (isAnimation)
+            return true;
+        curAction = event.getAction();
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                firstDownX = event.getRawX();
+                firstDownY = event.getRawY();
+                moveX = 0;
+                break;
+            case MotionEvent.ACTION_MOVE:
+                moveX = event.getRawX() - firstDownX;
+                pageWidget.postInvalidate();
+                break;
+            case MotionEvent.ACTION_CANCEL:
+                pageWidget.postInvalidate();
+                break;
+            case MotionEvent.ACTION_UP:
+                int width = pageWidget.getWidth();
+                if (moveX < 0) {
+                    if (Math.abs(moveX) > width / 8f) {
+                        nextPage();
+                        return true;
+                    }
+                } else if (moveX == 0) {
+                    if (firstDownX < pageWidget.getWidth() / 3f) {
+                        prePage();
+                        PageFactory.ShowOrHideOptionLayout(1);
+                    } else if (firstDownX < pageWidget.getWidth() * 2 / 3f) {
+                        PageFactory.ShowOrHideOptionLayout(0);
+                    } else {
+                        nextPage();
+                        PageFactory.ShowOrHideOptionLayout(1);
+                    }
+
+                } else {
+                    if (Math.abs(moveX) > width / 8f) {
+                        prePage();
+                        return true;
+                    }
+                }
+                pageWidget.postInvalidate();
+                break;
+        }
+
+        return true;
+    }
+
+
+
+    private void prePage() {
+        isAnimation = true;
+        PageFactory.prePage();
+
+        ValueAnimator valueAnimator = ObjectAnimator.ofFloat(moveX, pageWidget.getWidth());
+        valueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(@NonNull ValueAnimator animation) {
+                moveX = (float) animation.getAnimatedValue();
+                pageWidget.postInvalidate();
+            }
+        });
+        valueAnimator.addListener(new AnimatorListenerAdapter() {
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                super.onAnimationEnd(animation);
+                isAnimation = false;
+            }
+        });
+        valueAnimator.setInterpolator(new LinearInterpolator());
+        valueAnimator.setDuration(100);
+        valueAnimator.start();
+    }
+
+
+    private void nextPage() {
+        isAnimation = true;
+        PageFactory.nextPage();
+
+        ValueAnimator valueAnimator = ObjectAnimator.ofFloat(moveX, -pageWidget.getWidth());
+        valueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(@NonNull ValueAnimator animation) {
+                moveX = (float) animation.getAnimatedValue();
+                pageWidget.postInvalidate();
+            }
+        });
+
+        valueAnimator.addListener(new AnimatorListenerAdapter() {
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                super.onAnimationEnd(animation);
+                isAnimation = false;
+            }
+        });
+
+        valueAnimator.setInterpolator(new LinearInterpolator());
+
+        valueAnimator.setDuration(100);
+
+        valueAnimator.start();
+
+    }
+
+}
