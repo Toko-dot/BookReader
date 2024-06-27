@@ -6,6 +6,7 @@ import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.graphics.Canvas;
 import android.graphics.drawable.GradientDrawable;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.animation.LinearInterpolator;
 
@@ -40,13 +41,16 @@ public class CoverPageAnimation extends PageAnimation {
             if (moveX < 0) {
                 canvas.drawBitmap(pageWidget.getNextPage(), 0, 0, null);
                 canvas.drawBitmap(pageWidget.getCurPage(), moveX, 0, null);
-                addShadow((int) (pageWidget.getWidth() - Math.abs(moveX)), canvas);
+                if (30 < Math.abs(moveX) && Math.abs(moveX) <= pageWidget.getWidth() - 30)
+                    addShadow((int) (pageWidget.getWidth() - Math.abs(moveX)), canvas);
             } else if (moveX == 0) {
                 canvas.drawBitmap(pageWidget.getCurPage(), 0, 0, null);
             } else if (moveX > 0) {
                 canvas.drawBitmap(pageWidget.getCurPage(), 0, 0, null);
                 canvas.drawBitmap(pageWidget.getPrePage(), moveX - pageWidget.getWidth(), 0, null);
-                addShadow((int) moveX, canvas);
+
+                if (30 < Math.abs(moveX) && Math.abs(moveX) <= pageWidget.getWidth() - 30)
+                    addShadow((int) moveX, canvas);
             }
         } else {
             if (isAnimation) {
@@ -54,14 +58,16 @@ public class CoverPageAnimation extends PageAnimation {
                     canvas.drawBitmap(pageWidget.getCurPage(), 0, 0, null);
                     float left = Math.min(moveX, 0);
                     canvas.drawBitmap(pageWidget.getPrePage(), left, 0, null);
-                    addShadow((int) (pageWidget.getWidth() - Math.abs(moveX)), canvas);
+                    if (30 < Math.abs(moveX) && Math.abs(moveX) <= pageWidget.getWidth() - 30)
+                        addShadow((int) (pageWidget.getWidth() - Math.abs(moveX)), canvas);
                 } else if (moveX == 0) {
 
                 } else if (moveX > 0) {
                     canvas.drawBitmap(pageWidget.getNextPage(), 0, 0, null);
                     float left = Math.min(moveX - pageWidget.getWidth(), 0);
                     canvas.drawBitmap(pageWidget.getCurPage(), left, 0, null);
-                    addShadow((int) moveX, canvas);
+                    if (30 < Math.abs(moveX) && Math.abs(moveX) <= pageWidget.getWidth() - 30)
+                        addShadow((int) moveX, canvas);
                 }
             } else {
                 canvas.drawBitmap(pageWidget.getCurPage(), 0, 0, null);
@@ -70,7 +76,7 @@ public class CoverPageAnimation extends PageAnimation {
     }
 
     public void addShadow(int left, Canvas canvas) {
-        mBackShadowDrawableLR.setBounds(left, 0, left + Math.min(30, Math.abs(((int) moveX))), pageWidget.getHeight());
+        mBackShadowDrawableLR.setBounds(left, 0, left + 50, pageWidget.getHeight());
         mBackShadowDrawableLR.draw(canvas);
     }
 
@@ -122,7 +128,6 @@ public class CoverPageAnimation extends PageAnimation {
 
         return true;
     }
-
 
 
     private void prePage() {

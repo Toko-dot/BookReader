@@ -8,6 +8,7 @@ import android.graphics.Paint;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextPaint;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.zy.reader.widget.PageWidget;
@@ -15,6 +16,7 @@ import com.zy.reader.widget.PageWidget;
 import java.io.File;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -82,18 +84,18 @@ public class PageFactory {
         mCurPage = Bitmap.createBitmap(PageConfig.pageWidth, PageConfig.pageHeight, Bitmap.Config.RGB_565);
         mNextPage = Bitmap.createBitmap(PageConfig.pageWidth, PageConfig.pageHeight, Bitmap.Config.RGB_565);
 
-        switch (PageConfig.pageModule){
+        switch (PageConfig.pageModule) {
             case PageConfig.PAGE_MODULE_TYPE_1:
-                PageConfig.pageColor= Color.WHITE;
-                PageConfig.textColor= Color.BLACK;
+                PageConfig.pageColor = Color.WHITE;
+                PageConfig.textColor = Color.BLACK;
                 break;
             case PageConfig.PAGE_MODULE_TYPE_2:
-                PageConfig.pageColor= Color.BLACK;
-                PageConfig.textColor= Color.WHITE;
+                PageConfig.pageColor = Color.BLACK;
+                PageConfig.textColor = Color.WHITE;
                 break;
             case PageConfig.PAGE_MODULE_TYPE_3:
-                PageConfig.pageColor= Color.parseColor("#C7EDCC");
-                PageConfig.textColor= Color.BLACK;
+                PageConfig.pageColor = Color.parseColor("#C7EDCC");
+                PageConfig.textColor = Color.BLACK;
                 break;
         }
 
@@ -204,7 +206,7 @@ public class PageFactory {
 
     //上一页
     public static void prePage() {
-        if (mCurPageInfo.startPos == 0) {
+        if (mCurPageInfo==null||mCurPageInfo.startPos == 0) {
             return;
         }
         seekTo(mCurPageInfo.startPos - 1);
@@ -212,16 +214,16 @@ public class PageFactory {
 
     //下一页
     public static void nextPage() {
-        if (mCurPageInfo.endPos == BookUtils.bookLength) {
+        if (mCurPageInfo==null||mCurPageInfo.endPos == BookUtils.bookLength) {
             return;
         }
         seekTo(mCurPageInfo.endPos + 1);
     }
 
     public static void seekToWithProgress(int progress) {
-        long pos = (long) (BookUtils.bookLength * progress / 100)-1;
-        pos= Math.max(0,pos);
-        pos= Math.min(pos,BookUtils.bookLength-1);
+        long pos = (long) (BookUtils.bookLength * progress / 100) - 1;
+        pos = Math.max(0, pos);
+        pos = Math.min(pos, BookUtils.bookLength - 1);
         seekTo(pos);
     }
 
@@ -253,42 +255,45 @@ public class PageFactory {
         PageInfo pageInfo1 = getPageInfo(startPos);
 
         if (pageInfo1 == null) {
+            cleanPage(mCurPage);
             return;
         } else {
-            drawPage(mCurPage, pageInfo1.startPos, pageInfo1.endPos);
+            drawPage(mCurPage, pageInfo1);
         }
 
         //绘制下一页
         PageInfo pageInfo2 = getPageInfo(pageInfo1.endPos + 1);
         if (pageInfo2 == null) {
-            drawPage(mNextPage, 0, -1);
+            cleanPage(mNextPage);
         } else {
-            drawPage(mNextPage, pageInfo2.startPos, pageInfo2.endPos);
+            drawPage(mNextPage, pageInfo2);
         }
 
         //绘制前一页
         PageInfo pageInfo3 = getPageInfo(pageInfo1.startPos - 1);
         if (pageInfo3 == null) {
-            drawPage(mPrePage, 0, -1);
+            cleanPage(mPrePage);
         } else {
-            drawPage(mPrePage, pageInfo3.startPos, pageInfo3.endPos);
+            drawPage(mPrePage, pageInfo3);
         }
+
+
         mCurPageInfo = pageInfo1;
         pageWidget.postInvalidate();
     }
 
-    public static void changePageModule(int module){
-        if (mCurPageInfo==null){
+    public static void changePageModule(int module) {
+        if (mCurPageInfo == null) {
             return;
         }
-        PageConfig.pageModule=module;
+        PageConfig.pageModule = module;
         config();
         startRead(mCurPageInfo.startPos);
     }
 
 
     public static void changePageAnimationType(int type) {
-        if (mCurPageInfo==null){
+        if (mCurPageInfo == null) {
             return;
         }
         PageConfig.pageAnimationType = type;
@@ -297,12 +302,12 @@ public class PageFactory {
 
 
     public static void changeTextSize(float textSize) {
-        if (mCurPageInfo==null){
+        if (mCurPageInfo == null) {
             return;
         }
         PageConfig.textSize = textSize;
         config();
-        startRead( mCurPageInfo.startPos);
+        startRead(mCurPageInfo.startPos);
     }
 
 
@@ -392,63 +397,77 @@ public class PageFactory {
     }
 
 
+
+    private static void cleanPage(Bitmap bitmap) {
+        Canvas canvas = new Canvas(bitmap);
+        canvas.drawColor(PageConfig.pageColor);
+    }
+
     /**
      * 绘制一页
      *
      * @param bitmap
-     * @param startPos
-     * @param endPos
      * @return
      */
-    private static void drawPage(Bitmap bitmap, long startPos, long endPos) {
+    private static void drawPage(Bitmap bitmap, PageInfo pageInfo) {
+        if (pageInfo == null)
+            return;
         try {
-            ArrayList<String> lineList = new ArrayList<>();
-            int maxLines = getMaxLines();
-            int drawTextWidth = getDrawTextWidth();
-            int read = -1;
-            String line = "";
-            long curPos = startPos;
-            while (true) {
-                if (curPos > endPos) {
-                    curPos = endPos;
-                    break;
-                }
-                read = BookUtils.get(curPos);
-                if (read == -1) {
-                    break;
-                } else {
-                    char c = (char) read;
-                    if (c == '\n') {//换行符，新增一行
-                        lineList.add("" + line);
-                        line = "";
+            List<String> lineList = null;
+            long startPos = pageInfo.startPos;
+            long endPos = pageInfo.endPos;
+
+            if (pageInfo.datas.get() == null) {
+                lineList = new ArrayList<>();
+                int maxLines = getMaxLines();
+                int drawTextWidth = getDrawTextWidth();
+                int read = -1;
+                String line = "";
+                long curPos = startPos;
+                while (true) {
+                    if (curPos > endPos) {
+                        curPos = endPos;
+                        break;
+                    }
+                    read = BookUtils.get(curPos);
+                    if (read == -1) {
+                        break;
                     } else {
-                        String preLine = line + c;
-                        if (mTextPaint.measureText(preLine) > drawTextWidth) {//新增字符后超过绘制宽度，新增一行
+                        char c = (char) read;
+                        if (c == '\n') {//换行符，新增一行
                             lineList.add("" + line);
-                            line = "" + c;
+                            line = "";
                         } else {
-                            line = line + c;
+                            String preLine = line + c;
+                            if (mTextPaint.measureText(preLine) > drawTextWidth) {//新增字符后超过绘制宽度，新增一行
+                                lineList.add("" + line);
+                                line = "" + c;
+                            } else {
+                                line = line + c;
+                            }
+                        }
+                        if (lineList.size() >= maxLines) {
+                            break;
+                        }
+                        curPos++;
+                        if (BookUtils.isChapterFirstPos(curPos)) {
+                            curPos--;
+                            break;
                         }
                     }
-                    if (lineList.size() >= maxLines) {
-                        break;
-                    }
-                    curPos++;
-                    if (BookUtils.isChapterFirstPos(curPos)) {
-                        curPos--;
-                        break;
-                    }
                 }
-            }
 
-            if (lineList.size() < maxLines) {//当前行数未达到最大值，说明数据读到结尾了
-                if (!line.isEmpty()) {//最后一行存在
-                    lineList.add(line);
+                if (lineList.size() < maxLines) {//当前行数未达到最大值，说明数据读到结尾了
+                    if (!line.isEmpty()) {//最后一行存在
+                        lineList.add(line);
+                    }
+                } else if (lineList.size() == maxLines) {//当前行数达到最大值
+                    if (!line.isEmpty()) {//最后一行存在
+                        curPos -= line.toCharArray().length;
+                    }
                 }
-            } else if (lineList.size() == maxLines) {//当前行数达到最大值
-                if (!line.isEmpty()) {//最后一行存在
-                    curPos -= line.toCharArray().length;
-                }
+            } else {
+                lineList = pageInfo.datas.get();
             }
 
             Canvas canvas = new Canvas(bitmap);
@@ -471,7 +490,6 @@ public class PageFactory {
      * @param position
      */
     public static void loadChapter(long position) {
-        Log.d("TTTT", position + ">>>Start");
         BookUtils.Chapter curChapter = BookUtils.getChapterByPosition(position);
         if (curChapter == null)
             return;
@@ -494,15 +512,15 @@ public class PageFactory {
             long startPos = chapter.startPos;
             long endPos = Long.MAX_VALUE;
             while (true) {
-                endPos = calculationPage(startPos, chapter.endPos);
-                if (endPos == -1) {
+                PageInfo pageInfo = calculationPage(startPos, endPos);
+                if (pageInfo == null || !pageInfo.show) {
                     break;
                 } else {
-                    insertPageInfo(new PageInfo(startPos, endPos));
-                    if (endPos == chapter.endPos) {
+                    insertPageInfo(pageInfo);
+                    if (pageInfo.endPos == chapter.endPos) {
                         break;
                     } else {
-                        startPos = endPos + 1;
+                        startPos = pageInfo.endPos + 1;
                     }
                 }
             }
@@ -510,9 +528,9 @@ public class PageFactory {
     }
 
 
-    private static long calculationPage(long startPos, long endPos) {
+    private static PageInfo calculationPage(long startPos, long endPos) {
+        ArrayList<String> lineList = new ArrayList<>();
         try {
-            ArrayList<String> lineList = new ArrayList<>();
             int maxLines = getMaxLines();
             int drawTextWidth = getDrawTextWidth();
             int read = -1;
@@ -561,11 +579,20 @@ public class PageFactory {
                 }
             }
 
-            return curPos;
+            boolean show = false;
+            if (!lineList.isEmpty()) {
+                for (String str : lineList) {
+                    if (!TextUtils.isEmpty(str)) {
+                        show = true;
+                        break;
+                    }
+                }
+            }
+            return new PageInfo(show, startPos, curPos, new WeakReference<>(lineList));
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return -1;
+        return null;
     }
 
 
@@ -612,19 +639,20 @@ public class PageFactory {
 
 
     static class PageInfo {
+        public boolean show = false;
         public long startPos = Long.MAX_VALUE;
         public long endPos = Long.MAX_VALUE;
+        public WeakReference<List<String>> datas;
+
 
         public PageInfo() {
         }
 
-        public PageInfo(long startPos) {
-            this.startPos = startPos;
-        }
-
-        public PageInfo(long startPos, long endPos) {
+        public PageInfo(boolean show, long startPos, long endPos, WeakReference<List<String>> datas) {
+            this.show = show;
             this.startPos = startPos;
             this.endPos = endPos;
+            this.datas = datas;
         }
     }
 

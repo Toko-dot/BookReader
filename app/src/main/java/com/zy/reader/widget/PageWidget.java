@@ -82,6 +82,7 @@ public class PageWidget extends View {
     @Override
     protected void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);
+        canvas.drawColor(PageConfig.pageColor);
         if (mCurPage == null
                 || mPrePage == null
                 || mNextPage == null
