@@ -27,7 +27,8 @@ public class NonePageAnimation extends PageAnimation{
                 firstDownY = event.getY();
                 return true;
             case MotionEvent.ACTION_UP:
-                if (Math.abs(event.getX() - firstDownX) < 100) {
+
+//                if (Math.abs(event.getX() - firstDownX) < 100) {
                     int width = pageWidget.getWidth();
                     if (firstDownX < width / 3f) {
                         PageFactory.prePage();
@@ -38,7 +39,7 @@ public class NonePageAnimation extends PageAnimation{
                         PageFactory.nextPage();
                         PageFactory.ShowOrHideOptionLayout(1);
                     }
-                }
+//                }
                 return true;
         }
 
