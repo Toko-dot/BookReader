@@ -9,6 +9,12 @@ import android.view.WindowManager;
 public class PageConfig {
     public static final int PAGE_ANIMATION_TYPE_NONE = 0;
     public static final int PAGE_ANIMATION_TYPE_COVER = 1;
+
+    public static final int PAGE_MODULE_TYPE_1 = 0;
+    public static final int PAGE_MODULE_TYPE_2 = 1;
+    public static final int PAGE_MODULE_TYPE_3 = 2;
+
+
     public static final float TEXT_SIZE_MIN = 40;
     public static final float TEXT_SIZE_MID = 60;
     public static final float TEXT_SIZE_MAX = 80;
@@ -34,11 +40,12 @@ public class PageConfig {
     public static float textSize = TEXT_SIZE_MID;
     //字体颜色
     public static int textColor = Color.BLACK;
-
     //字体大小
     public static float lineSpace = 20;
 
     public static int pageAnimationType = PAGE_ANIMATION_TYPE_NONE;
+
+    public static int pageModule = PAGE_MODULE_TYPE_1;
 
 
     public static void init(Context context) {

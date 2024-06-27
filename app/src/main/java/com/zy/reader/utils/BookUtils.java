@@ -271,7 +271,7 @@ public class BookUtils {
                     long curPos = size - 1;
                     if (cr == '\n') {//碰到换行符
                         String str = sb.toString();
-                        if (str.matches(".*第.{1,8}章\\s+.*") || str.matches(".*第.{1,8}节.*")) {
+                        if (str.matches(".*第.{1,8}章.*") || str.matches(".*第.{1,8}节.*")) {
                             if (!chapterList.isEmpty()) {
                                 Chapter lastChapter = chapterList.get(chapterList.size() - 1);
                                 lastChapter.endPos = Math.max(0, curPos - str.toCharArray().length - 1);

@@ -3,6 +3,8 @@ package com.zy.reader.activity
 import android.os.Bundle
 import android.text.TextUtils
 import android.view.View
+import android.widget.SeekBar
+import android.widget.SeekBar.OnSeekBarChangeListener
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
@@ -81,6 +83,34 @@ class ReadActivity : AppCompatActivity() {
             }
         })
 
+        binding.tvPreChapter.setOnClickListener {
+            PageFactory.preChapter()
+        }
+
+
+        binding.tvNextChapter.setOnClickListener {
+            PageFactory.nextChapter()
+        }
+
+        binding.sbSeek.setOnSeekBarChangeListener(object : OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {
+
+            }
+
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                seekBar?.progress?.let {
+                    PageFactory.seekToWithProgress(it)
+                }
+
+            }
+
+        })
+
+
         binding.tvChapterList.setOnClickListener {
             binding.llChapterList.visibility = View.VISIBLE
             if (binding.rvChapters.childCount == 0)
@@ -117,6 +147,43 @@ class ReadActivity : AppCompatActivity() {
             }
         }
 
+        binding.rbModule1.setOnCheckedChangeListener { buttonView, isChecked ->
+            if (isChecked) {
+                PageFactory.changePageModule(
+                    PageConfig.PAGE_MODULE_TYPE_1
+                )
+            }
+        }
+
+        binding.rbModule2.setOnCheckedChangeListener { buttonView, isChecked ->
+            if (isChecked) {
+                PageFactory.changePageModule(
+                    PageConfig.PAGE_MODULE_TYPE_2
+                )
+            }
+        }
+
+        binding.rbModule3.setOnCheckedChangeListener { buttonView, isChecked ->
+            if (isChecked) {
+                PageFactory.changePageModule(
+                    PageConfig.PAGE_MODULE_TYPE_3
+                )
+            }
+        }
+
+
+
+        when(PageConfig.pageModule){
+            PageConfig.PAGE_MODULE_TYPE_1->{
+                binding.rbModule1.isChecked=true;
+            }
+            PageConfig.PAGE_MODULE_TYPE_2->{
+                binding.rbModule2.isChecked=true;
+            }
+            PageConfig.PAGE_MODULE_TYPE_3->{
+                binding.rbModule3.isChecked=true;
+            }
+        }
 
 
         if (PageConfig.pageAnimationType == PageConfig.PAGE_ANIMATION_TYPE_COVER) {
@@ -147,6 +214,33 @@ class ReadActivity : AppCompatActivity() {
                 PageFactory.changeTextSize(
                     PageConfig.TEXT_SIZE_MAX
                 )
+            }
+        }
+
+        binding.rbTextSetting.setOnCheckedChangeListener { buttonView, isChecked ->
+
+            if (isChecked){
+                binding.lTextSetting.visibility=View.VISIBLE
+            }else{
+                binding.lTextSetting.visibility=View.GONE
+            }
+
+        }
+
+        binding.rbAniSetting.setOnCheckedChangeListener { buttonView, isChecked ->
+
+            if (isChecked){
+                binding.lAniSetting.visibility=View.VISIBLE
+            }else{
+                binding.lAniSetting.visibility=View.GONE
+            }
+        }
+
+        binding.rbModule.setOnCheckedChangeListener { buttonView, isChecked ->
+            if (isChecked){
+                binding.lModuleSetting.visibility=View.VISIBLE
+            }else{
+                binding.lModuleSetting.visibility=View.GONE
             }
         }
 

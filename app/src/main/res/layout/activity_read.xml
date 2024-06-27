@@ -37,6 +37,7 @@
                 android:paddingVertical="10dp">
 
                 <TextView
+                    android:id="@+id/tv_pre_chapter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="上一章"
@@ -44,13 +45,16 @@
                     android:textSize="16sp" />
 
                 <SeekBar
+                    android:id="@+id/sb_seek"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    android:maxLength="100"
                     android:maxHeight="20dp"
                     android:minHeight="20dp" />
 
                 <TextView
+                    android:id="@+id/tv_next_chapter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="下一章"
@@ -61,10 +65,12 @@
 
 
             <RadioGroup
+                android:id="@+id/l_text_setting"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
+                android:visibility="gone"
                 android:paddingHorizontal="20dp"
                 android:paddingVertical="10dp">
 
@@ -113,10 +119,12 @@
 
 
             <RadioGroup
+                android:id="@+id/l_ani_setting"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
+                android:visibility="gone"
                 android:paddingHorizontal="20dp"
                 android:paddingVertical="10dp">
 
@@ -153,6 +161,62 @@
             </RadioGroup>
 
 
+
+            <RadioGroup
+                android:id="@+id/l_module_setting"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone"
+                android:paddingHorizontal="20dp"
+                android:paddingVertical="10dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="模板："
+                    android:textColor="@color/black"
+                    android:textSize="16sp" />
+
+                <RadioButton
+                    android:id="@+id/rb_module_1"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:button="@null"
+                    android:gravity="center"
+                    android:text="模板一"
+                    android:textColor="@color/selector_bottom_option_rb"
+                    android:textSize="16sp" />
+
+
+                <RadioButton
+                    android:id="@+id/rb_module_2"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:button="@null"
+                    android:gravity="center"
+                    android:text="模板二"
+                    android:textColor="@color/selector_bottom_option_rb"
+                    android:textSize="16sp" />
+
+
+                <RadioButton
+                    android:id="@+id/rb_module_3"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:button="@null"
+                    android:gravity="center"
+                    android:text="模板三"
+                    android:textColor="@color/selector_bottom_option_rb"
+                    android:textSize="16sp" />
+
+            </RadioGroup>
+
+
             <RadioGroup
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -162,7 +226,7 @@
                 <TextView
                     android:id="@+id/tv_chapter_list"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="60dp"
                     android:layout_weight="1"
                     android:button="@null"
                     android:gravity="center"
@@ -171,8 +235,9 @@
                     android:textSize="16sp" />
 
                 <RadioButton
+                    android:id="@+id/rb_text_setting"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="60dp"
                     android:layout_weight="1"
                     android:button="@null"
                     android:gravity="center"
@@ -181,12 +246,25 @@
                     android:textSize="16sp" />
 
                 <RadioButton
+                    android:id="@+id/rb_ani_setting"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="60dp"
                     android:layout_weight="1"
                     android:button="@null"
                     android:gravity="center"
                     android:text="翻页"
+                    android:textColor="@color/selector_bottom_option_rb"
+                    android:textSize="16sp" />
+
+
+                <RadioButton
+                    android:id="@+id/rb_module"
+                    android:layout_width="0dp"
+                    android:layout_height="60dp"
+                    android:layout_weight="1"
+                    android:button="@null"
+                    android:gravity="center"
+                    android:text="模板"
                     android:textColor="@color/selector_bottom_option_rb"
                     android:textSize="16sp" />
 

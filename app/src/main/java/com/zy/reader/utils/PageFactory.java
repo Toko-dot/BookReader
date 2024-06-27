@@ -3,6 +3,7 @@ package com.zy.reader.utils;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Handler;
 import android.os.Looper;
@@ -14,6 +15,7 @@ import com.zy.reader.widget.PageWidget;
 import java.io.File;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -40,7 +42,7 @@ public class PageFactory {
 
     private static ArrayList<PageInfo> pageInfoList = new ArrayList<>();
 
-    private static PageInfo mCurPageInfo = new PageInfo();
+    private static PageInfo mCurPageInfo;
 
     private static Handler mHandler = new Handler(Looper.getMainLooper());
     private static ExecutorService threadExecutor;
@@ -79,6 +81,22 @@ public class PageFactory {
         mPrePage = Bitmap.createBitmap(PageConfig.pageWidth, PageConfig.pageHeight, Bitmap.Config.RGB_565);
         mCurPage = Bitmap.createBitmap(PageConfig.pageWidth, PageConfig.pageHeight, Bitmap.Config.RGB_565);
         mNextPage = Bitmap.createBitmap(PageConfig.pageWidth, PageConfig.pageHeight, Bitmap.Config.RGB_565);
+
+        switch (PageConfig.pageModule){
+            case PageConfig.PAGE_MODULE_TYPE_1:
+                PageConfig.pageColor= Color.WHITE;
+                PageConfig.textColor= Color.BLACK;
+                break;
+            case PageConfig.PAGE_MODULE_TYPE_2:
+                PageConfig.pageColor= Color.BLACK;
+                PageConfig.textColor= Color.WHITE;
+                break;
+            case PageConfig.PAGE_MODULE_TYPE_3:
+                PageConfig.pageColor= Color.parseColor("#C7EDCC");
+                PageConfig.textColor= Color.BLACK;
+                break;
+        }
+
 
         //创建画笔
         mTextPaint = new TextPaint();
@@ -142,30 +160,54 @@ public class PageFactory {
     }
 
 
+    public static void preChapter() {
+        if (mCurPageInfo == null) {
+            return;
+        }
+
+        BookUtils.Chapter chapter = BookUtils.getChapterByPosition(mCurPageInfo.startPos);
+
+        if (chapter == null) {
+            return;
+        }
+
+        chapter = BookUtils.getChapterByPosition(chapter.startPos - 1);
+
+        if (chapter == null) {
+            return;
+        }
+
+        seekTo(chapter.startPos);
+
+
+    }
+
+
+    public static void nextChapter() {
+        if (mCurPageInfo == null) {
+            return;
+        }
+        BookUtils.Chapter chapter = BookUtils.getChapterByPosition(mCurPageInfo.startPos);
+
+        if (chapter == null) {
+            return;
+        }
+        chapter = BookUtils.getChapterByPosition(chapter.endPos + 1);
+
+        if (chapter == null) {
+            return;
+        }
+
+        seekTo(chapter.startPos);
+    }
+
+
     //上一页
     public static void prePage() {
         if (mCurPageInfo.startPos == 0) {
             return;
         }
-        long pos = mCurPageInfo.startPos - 1;
-        PageInfo pageInfo = getPageInfo(pos);
-        if (pageInfo == null) {
-            threadExecutor.submit(new Runnable() {
-                @Override
-                public void run() {
-                    loadChapter(pos);
-                    mHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            startDraw(pos);
-                        }
-                    });
-                }
-            });
-
-        } else {
-            startDraw(pos);
-        }
+        seekTo(mCurPageInfo.startPos - 1);
     }
 
     //下一页
@@ -173,24 +215,36 @@ public class PageFactory {
         if (mCurPageInfo.endPos == BookUtils.bookLength) {
             return;
         }
-        long pos = mCurPageInfo.endPos + 1;
-        PageInfo pageInfo = getPageInfo(pos);
+        seekTo(mCurPageInfo.endPos + 1);
+    }
+
+    public static void seekToWithProgress(int progress) {
+        long pos = (long) (BookUtils.bookLength * progress / 100)-1;
+        pos= Math.max(0,pos);
+        pos= Math.min(pos,BookUtils.bookLength-1);
+        seekTo(pos);
+    }
+
+
+    private static void seekTo(long position) {
+        PageInfo pageInfo = getPageInfo(position);
         if (pageInfo == null) {
             threadExecutor.submit(new Runnable() {
                 @Override
                 public void run() {
-                    loadChapter(pos);
+                    loadChapter(position);
                     mHandler.post(new Runnable() {
                         @Override
                         public void run() {
-                            startDraw(pos);
+                            startDraw(position);
                         }
                     });
                 }
             });
         } else {
-            startDraw(pos);
+            startDraw(position);
         }
+
     }
 
     private static void startDraw(long startPos) {
@@ -212,7 +266,6 @@ public class PageFactory {
             drawPage(mNextPage, pageInfo2.startPos, pageInfo2.endPos);
         }
 
-
         //绘制前一页
         PageInfo pageInfo3 = getPageInfo(pageInfo1.startPos - 1);
         if (pageInfo3 == null) {
@@ -220,27 +273,36 @@ public class PageFactory {
         } else {
             drawPage(mPrePage, pageInfo3.startPos, pageInfo3.endPos);
         }
-
-
         mCurPageInfo = pageInfo1;
         pageWidget.postInvalidate();
     }
 
+    public static void changePageModule(int module){
+        if (mCurPageInfo==null){
+            return;
+        }
+        PageConfig.pageModule=module;
+        config();
+        startRead(mCurPageInfo.startPos);
+    }
+
 
     public static void changePageAnimationType(int type) {
-        PageConfig.pageAnimationType = type;
-        if (pageWidget != null) {
-            pageWidget.changePageAnimationType(type);
+        if (mCurPageInfo==null){
+            return;
         }
+        PageConfig.pageAnimationType = type;
+        pageWidget.changePageAnimationType(type);
     }
 
 
     public static void changeTextSize(float textSize) {
-        PageConfig.textSize = textSize;
-        if (pageWidget != null) {
-            config();
-            startRead(mCurPageInfo == null ? 0 : mCurPageInfo.startPos);
+        if (mCurPageInfo==null){
+            return;
         }
+        PageConfig.textSize = textSize;
+        config();
+        startRead( mCurPageInfo.startPos);
     }
 
 
@@ -262,18 +324,18 @@ public class PageFactory {
      */
     private static PageInfo getPageInfo(long position) {
         PageInfo pageInfo = null;
-        int left=0;
-        int right=pageInfoList.size()-1;
-        while (left<=right){
-            int mid=left+(right-left)/2;
-            PageInfo item=pageInfoList.get(mid);
-            if (position>=item.startPos&&position<=item.endPos){
-                pageInfo=item;
+        int left = 0;
+        int right = pageInfoList.size() - 1;
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+            PageInfo item = pageInfoList.get(mid);
+            if (position >= item.startPos && position <= item.endPos) {
+                pageInfo = item;
                 break;
-            }else if (position>item.endPos){
-                left=mid+1;
-            }else{
-                right=mid-1;
+            } else if (position > item.endPos) {
+                left = mid + 1;
+            } else {
+                right = mid - 1;
             }
         }
         return pageInfo;
