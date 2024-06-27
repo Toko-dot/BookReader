@@ -1,6 +1,7 @@
 package com.zy.reader.utils;
 
 import android.text.TextUtils;
+import android.util.Log;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -27,6 +28,8 @@ public class BookUtils {
         BookUtils.onCacheListener = onCacheListener;
         cleanAndCreateDir();
         cacheFileList = new ArrayList<>();
+        chapterList = new ArrayList<>();
+
         cacheBook();
         getChapterList();
         onCacheListener.onSuccess();
@@ -78,7 +81,7 @@ public class BookUtils {
 
                 String bufStr = new String(buffArray);
 
-                bufStr=bufStr.replaceAll("\u0000", "");//\u0000 在侧量时不计算，替换以下
+                bufStr = bufStr.replaceAll("\u0000", "");//\u0000 在侧量时不计算，替换以下
 
                 buffArray = bufStr.toCharArray();
 
@@ -260,7 +263,8 @@ public class BookUtils {
     public static synchronized List<Chapter> getChapterList() {
         if (chapterList.isEmpty()) {
             long size = 0;
-            chapterList.add(new Chapter("序章", 0));
+            Chapter preChapter = new Chapter("序章", 0);
+            chapterList.add(preChapter);
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < cacheFileList.size(); i++) {
                 char[] charArray = getCharArray(i);
@@ -272,24 +276,28 @@ public class BookUtils {
                     if (cr == '\n') {//碰到换行符
                         String str = sb.toString();
                         if (str.matches(".*第.{1,8}章.*") || str.matches(".*第.{1,8}节.*")) {
-                            if (!chapterList.isEmpty()) {
-                                Chapter lastChapter = chapterList.get(chapterList.size() - 1);
-                                lastChapter.endPos = Math.max(0, curPos - str.toCharArray().length - 1);
-                            }
-                            chapterList.add(new Chapter(str, curPos - str.toCharArray().length));
+                            preChapter.endPos = Math.max(0, curPos - str.toCharArray().length - 1);
+                            preChapter = new Chapter(str, curPos - str.toCharArray().length);
+                            chapterList.add(preChapter);
                         }
                         sb = new StringBuilder();
                     } else {
                         sb.append(cr);
+                        if ((curPos - preChapter.startPos+1) >= MAX_CACHE_SIZE) {
+                            preChapter.endPos = Math.max(0, curPos);
+                            preChapter = new Chapter("系统分章", Math.min(curPos + 1, BookUtils.bookLength - 1));
+                            chapterList.add(preChapter);
+                            sb = new StringBuilder();
+                        }
                     }
                 }
-
-                if (!chapterList.isEmpty()) {
-                    Chapter lastChapter = chapterList.get(chapterList.size() - 1);
-                    lastChapter.endPos = bookLength - 1;
-                }
-
             }
+
+            if (!chapterList.isEmpty()) {
+                Chapter lastChapter = chapterList.get(chapterList.size() - 1);
+                lastChapter.endPos = bookLength - 1;
+            }
+
             return chapterList;
         } else {
             return chapterList;

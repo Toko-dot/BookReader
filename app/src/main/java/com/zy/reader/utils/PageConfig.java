@@ -13,8 +13,6 @@ public class PageConfig {
     public static final int PAGE_MODULE_TYPE_1 = 0;
     public static final int PAGE_MODULE_TYPE_2 = 1;
     public static final int PAGE_MODULE_TYPE_3 = 2;
-
-
     public static final float TEXT_SIZE_MIN = 40;
     public static final float TEXT_SIZE_MID = 60;
     public static final float TEXT_SIZE_MAX = 80;
@@ -41,7 +39,7 @@ public class PageConfig {
     //字体颜色
     public static int textColor = Color.BLACK;
     //字体大小
-    public static float lineSpace = 20;
+    public static float lineSpace = 40;
 
     public static int pageAnimationType = PAGE_ANIMATION_TYPE_NONE;
 
@@ -54,6 +52,34 @@ public class PageConfig {
         display.getMetrics(dm);
         PageConfig.screenWidth = dm.widthPixels;
         PageConfig.screenHeight = dm.heightPixels;
+
+
+        //屏幕宽度
+        int screenWidth = 0;
+        //屏幕高度
+        int screenHeight = 0;
+        //页面宽度
+        int pageWidth = 0;
+        //页面高度
+        int pageHeight = 0;
+        //页面内间距
+        int pagePaddingTop = 40;
+        int pagePaddingBottom = 40;
+        int pagePaddingLeft = 40;
+        int pagePaddingRight = 40;
+        //页面背景色
+        int pageColor = Color.WHITE;
+        //字体大小
+        float textSize = TEXT_SIZE_MID;
+        //字体颜色
+        int textColor = Color.BLACK;
+        //字体大小
+        float lineSpace = 40;
+        //页面动画
+        int pageAnimationType = PAGE_ANIMATION_TYPE_NONE;
+        //页面模式
+        int pageModule = PAGE_MODULE_TYPE_1;
+
     }
 
 }
