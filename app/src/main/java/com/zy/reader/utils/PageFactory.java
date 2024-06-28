@@ -49,8 +49,11 @@ public class PageFactory {
     private static Handler mHandler = new Handler(Looper.getMainLooper());
     private static ExecutorService threadExecutor;
 
-    public static void init(Context context, Listener listener) {
+    private static boolean isReady = false;
+
+    public static void init(Context context, PageWidget pageWidget, Listener listener) {
         mContext = new WeakReference<>(context);
+        PageFactory.pageWidget = pageWidget;
         PageFactory.mListener = listener;
         PageConfig.init(context);
         //创建缓存目录
@@ -59,8 +62,9 @@ public class PageFactory {
             dir.mkdir();
         }
         cacheBookDir = dir.getPath();
-
         threadExecutor = Executors.newSingleThreadExecutor();
+        mCurPageInfo = new PageInfo();
+        isReady = false;
     }
 
 
@@ -110,16 +114,15 @@ public class PageFactory {
         }
     }
 
-    public static void openBook(String path, PageWidget pageWidget) {
-        bookPath = path;
-        PageFactory.pageWidget = pageWidget;
-
+    public static void openBook(String path) {
+        PageFactory.bookPath = path;
         new Thread(new Runnable() {
             @Override
             public void run() {
-                BookUtils.cacheBook(cacheBookDir, bookPath, new BookUtils.OnCacheListener() {
+                BookUtils.cacheBook(PageFactory.cacheBookDir, PageFactory.bookPath, new BookUtils.OnCacheListener() {
                     @Override
                     public void onSuccess() {
+                        isReady = true;
                         mHandler.post(new Runnable() {
                             @Override
                             public void run() {
@@ -146,47 +149,29 @@ public class PageFactory {
     public static void startRead(long startPos) {
         pageInfoList.clear();
         config();
-
-        threadExecutor.submit(new Runnable() {
-            @Override
-            public void run() {
-                loadChapter(startPos);
-                mHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        startDraw(startPos);
-                    }
-                });
-            }
-        });
+        seekTo(startPos);
     }
 
 
     public static void preChapter() {
-        if (mCurPageInfo == null) {
+        if (!isReady) {
             return;
         }
-
         BookUtils.Chapter chapter = BookUtils.getChapterByPosition(mCurPageInfo.startPos);
-
         if (chapter == null) {
             return;
         }
-
         chapter = BookUtils.getChapterByPosition(chapter.startPos - 1);
 
         if (chapter == null) {
             return;
         }
-
         seekTo(chapter.startPos);
-
-
     }
 
 
     public static void nextChapter() {
-        if (mCurPageInfo == null) {
+        if (!isReady) {
             return;
         }
         BookUtils.Chapter chapter = BookUtils.getChapterByPosition(mCurPageInfo.startPos);
@@ -206,7 +191,7 @@ public class PageFactory {
 
     //上一页
     public static void prePage() {
-        if (mCurPageInfo==null||mCurPageInfo.startPos == 0) {
+        if (!isReady || mCurPageInfo.startPos == 0) {
             return;
         }
         seekTo(mCurPageInfo.startPos - 1);
@@ -214,7 +199,7 @@ public class PageFactory {
 
     //下一页
     public static void nextPage() {
-        if (mCurPageInfo==null||mCurPageInfo.endPos == BookUtils.bookLength) {
+        if (!isReady || mCurPageInfo.endPos == BookUtils.bookLength) {
             return;
         }
         seekTo(mCurPageInfo.endPos + 1);
@@ -229,6 +214,8 @@ public class PageFactory {
 
 
     private static void seekTo(long position) {
+        mListener.onProgress(BookUtils.bookLength == 0 ? 0 : (int) ((position + 1) / BookUtils.bookLength));
+
         PageInfo pageInfo = getPageInfo(position);
         if (pageInfo == null) {
             threadExecutor.submit(new Runnable() {
@@ -239,12 +226,14 @@ public class PageFactory {
                         @Override
                         public void run() {
                             startDraw(position);
+                            refreshUI();
                         }
                     });
                 }
             });
         } else {
             startDraw(position);
+            refreshUI();
         }
 
     }
@@ -277,13 +266,17 @@ public class PageFactory {
             drawPage(mPrePage, pageInfo3);
         }
 
-
         mCurPageInfo = pageInfo1;
+
+
+    }
+
+    public static void refreshUI() {
         pageWidget.postInvalidate();
     }
 
     public static void changePageModule(int module) {
-        if (mCurPageInfo == null) {
+        if (!isReady) {
             return;
         }
         PageConfig.pageModule = module;
@@ -293,7 +286,7 @@ public class PageFactory {
 
 
     public static void changePageAnimationType(int type) {
-        if (mCurPageInfo == null) {
+        if (!isReady) {
             return;
         }
         PageConfig.pageAnimationType = type;
@@ -302,7 +295,7 @@ public class PageFactory {
 
 
     public static void changeTextSize(float textSize) {
-        if (mCurPageInfo == null) {
+        if (!isReady) {
             return;
         }
         PageConfig.textSize = textSize;
@@ -395,7 +388,6 @@ public class PageFactory {
         }
         return false;
     }
-
 
 
     private static void cleanPage(Bitmap bitmap) {
@@ -629,6 +621,8 @@ public class PageFactory {
         void onCacheBookFail();
 
         void onMeasureFinish();
+
+        void onProgress(int progress);
 
         void onError(int what);
 

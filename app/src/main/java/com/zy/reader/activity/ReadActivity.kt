@@ -37,7 +37,7 @@ class ReadActivity : AppCompatActivity() {
         bookPath = path!!
 
 
-        PageFactory.init(this@ReadActivity, object : Listener {
+        PageFactory.init(this@ReadActivity, binding.pageWidget, object : Listener {
 
             override fun onCacheBookSuccess() {
                 PageFactory.startRead(0)
@@ -49,7 +49,11 @@ class ReadActivity : AppCompatActivity() {
             }
 
             override fun onMeasureFinish() {
-                PageFactory.openBook(bookPath, binding.pageWidget)
+                PageFactory.openBook(bookPath)
+            }
+
+            override fun onProgress(progress: Int) {
+                binding.sbSeek.progress = progress
             }
 
             override fun onError(what: Int) {
@@ -173,15 +177,17 @@ class ReadActivity : AppCompatActivity() {
 
 
 
-        when(PageConfig.pageModule){
-            PageConfig.PAGE_MODULE_TYPE_1->{
-                binding.rbModule1.isChecked=true;
+        when (PageConfig.pageModule) {
+            PageConfig.PAGE_MODULE_TYPE_1 -> {
+                binding.rbModule1.isChecked = true;
             }
-            PageConfig.PAGE_MODULE_TYPE_2->{
-                binding.rbModule2.isChecked=true;
+
+            PageConfig.PAGE_MODULE_TYPE_2 -> {
+                binding.rbModule2.isChecked = true;
             }
-            PageConfig.PAGE_MODULE_TYPE_3->{
-                binding.rbModule3.isChecked=true;
+
+            PageConfig.PAGE_MODULE_TYPE_3 -> {
+                binding.rbModule3.isChecked = true;
             }
         }
 
@@ -219,28 +225,28 @@ class ReadActivity : AppCompatActivity() {
 
         binding.rbTextSetting.setOnCheckedChangeListener { buttonView, isChecked ->
 
-            if (isChecked){
-                binding.lTextSetting.visibility=View.VISIBLE
-            }else{
-                binding.lTextSetting.visibility=View.GONE
+            if (isChecked) {
+                binding.lTextSetting.visibility = View.VISIBLE
+            } else {
+                binding.lTextSetting.visibility = View.GONE
             }
 
         }
 
         binding.rbAniSetting.setOnCheckedChangeListener { buttonView, isChecked ->
 
-            if (isChecked){
-                binding.lAniSetting.visibility=View.VISIBLE
-            }else{
-                binding.lAniSetting.visibility=View.GONE
+            if (isChecked) {
+                binding.lAniSetting.visibility = View.VISIBLE
+            } else {
+                binding.lAniSetting.visibility = View.GONE
             }
         }
 
         binding.rbModule.setOnCheckedChangeListener { buttonView, isChecked ->
-            if (isChecked){
-                binding.lModuleSetting.visibility=View.VISIBLE
-            }else{
-                binding.lModuleSetting.visibility=View.GONE
+            if (isChecked) {
+                binding.lModuleSetting.visibility = View.VISIBLE
+            } else {
+                binding.lModuleSetting.visibility = View.GONE
             }
         }
 
