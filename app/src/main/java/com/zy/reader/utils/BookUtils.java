@@ -3,9 +3,12 @@ package com.zy.reader.utils;
 import android.text.TextUtils;
 import android.util.Log;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -18,7 +21,7 @@ public class BookUtils {
     private static String bookPath;
     private static final int MAX_CACHE_SIZE = 30000;
     private static OnCacheListener onCacheListener;
-    public static ArrayList<CacheFile> cacheFileList = new ArrayList<>();
+
     public static ArrayList<Chapter> chapterList = new ArrayList<>();
     public static long bookLength = 0L;
 
@@ -27,12 +30,12 @@ public class BookUtils {
         BookUtils.bookPath = bookPath;
         BookUtils.onCacheListener = onCacheListener;
         cleanAndCreateDir();
-        cacheFileList = new ArrayList<>();
+
         chapterList = new ArrayList<>();
 
-        cacheBook();
-        getChapterList();
-        onCacheListener.onSuccess();
+        generateChapterList();
+
+        BookUtils.onCacheListener.onSuccess();
     }
 
     private static void cleanAndCreateDir() {
@@ -48,90 +51,6 @@ public class BookUtils {
         }
     }
 
-    private static void cacheBook() {
-        FileInputStream fileInputStream = null;
-        InputStreamReader inputStreamReader = null;
-        OutputStreamWriter outputStreamWriter = null;
-        try {
-
-            String charset = FileUtils.getCharset(bookPath);
-            if (TextUtils.isEmpty(charset)) {
-                charset = "UTF-8";
-            }
-
-            int index = 0;
-            long total = 0;
-            fileInputStream = new FileInputStream(bookPath);
-            inputStreamReader = new InputStreamReader(fileInputStream, charset);
-            while (true) {
-                index++;
-
-                File file = new File(cacheBookDir, index + ".txt");
-                char[] buffArray = new char[MAX_CACHE_SIZE];
-                int result = inputStreamReader.read(buffArray);
-
-                if (result == -1) {//没有数据
-                    file.delete();
-                    break;
-                }
-
-                CacheFile cacheFile = new CacheFile();
-                cacheFile.path = file.getPath();
-                cacheFile.startPos = total;
-
-                String bufStr = new String(buffArray);
-
-                bufStr = bufStr.replaceAll("\u0000", "");//\u0000 在侧量时不计算，替换以下
-
-                buffArray = bufStr.toCharArray();
-
-                total += buffArray.length;
-
-                cacheFile.endPos = (total - 1) < 0 ? 0 : (total - 1);
-                cacheFile.data = new WeakReference<char[]>(buffArray);
-
-                cacheFileList.add(index - 1, cacheFile);
-
-                outputStreamWriter = new OutputStreamWriter(new FileOutputStream(file), "UTF-16LE");
-                outputStreamWriter.write(buffArray);
-                outputStreamWriter.flush();//刷新一下，不然有时会没数据
-                outputStreamWriter.close();
-
-                if (result < MAX_CACHE_SIZE) {//读到结尾了
-                    break;
-                }
-            }
-            bookLength = total;
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            onCacheListener.onError();
-        } finally {
-            if (fileInputStream != null) {
-                try {
-                    fileInputStream.close();
-                } catch (IOException e) {
-                }
-            }
-
-            if (inputStreamReader != null) {
-                try {
-                    inputStreamReader.close();
-                } catch (IOException e) {
-
-                }
-            }
-
-            if (outputStreamWriter != null) {
-                try {
-                    outputStreamWriter.close();
-                } catch (IOException e) {
-
-                }
-            }
-
-        }
-    }
 
     /**
      * 获取某个字节
@@ -141,12 +60,28 @@ public class BookUtils {
      */
     public static int get(long position) {
         int result = -1;
-        int index = (int) (position / MAX_CACHE_SIZE);
-        int offset = (int) (position % MAX_CACHE_SIZE);
-        char[] dataArray = getCharArray(index);
+
+        int index = getChapterIndexByPosition(position);
+
+        if (index == -1)
+            return result;
+
+        char[] dataArray = getChapterData(index);
+
+        if (dataArray == null)
+            return result;
+
+        Chapter chapter = getChapter(index);
+
+        if (chapter == null)
+            return result;
+
+        int offset = (int) (position - chapter.startPos);
+
         if (dataArray != null && offset >= 0 && offset < dataArray.length) {
             result = dataArray[offset];
         }
+
         return result;
     }
 
@@ -215,27 +150,76 @@ public class BookUtils {
     }
 
 
+    public static int getChapterIndexByPosition(long position) {
+        if (position < 0 || position > bookLength - 1) {
+            return -1;
+        }
+        int left = 0;
+        int right = chapterList.size() - 1;
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+            if (position >= chapterList.get(mid).startPos && position <= chapterList.get(mid).endPos) {
+                return mid;
+            } else if (chapterList.get(mid).endPos < position) {
+                left = mid + 1;
+            } else {
+                right = mid - 1;
+            }
+        }
+        return -1;
+    }
+
+    public static Chapter getChapter(int index) {
+        if (index >= 0 && index < chapterList.size()) {
+            return chapterList.get(index);
+        }
+        return null;
+    }
+
+
     /**
      * 获取索引是index的字节数组
      *
      * @param index
      * @return
      */
-    private static char[] getCharArray(int index) {
+    private static char[] getChapterData(int index) {
         FileInputStream fileInputStream = null;
         InputStreamReader inputStreamReader = null;
         try {
-            CacheFile cacheFile = cacheFileList.get(index);
-            char[] datas = cacheFile.data.get();
+
+            Chapter chapter = chapterList.get(index);
+            char[] datas = chapter.datas == null ? null : chapter.datas.get();
             if (datas == null) {
-                File file = new File(cacheFile.path);
-                fileInputStream = new FileInputStream(file);
-                inputStreamReader = new InputStreamReader(fileInputStream, "UTF-16LE");
-                int length = (int) (cacheFile.endPos - cacheFile.startPos + 1);
-                length = Math.max(length, 0);
-                datas = new char[length];
-                inputStreamReader.read(datas);
-                cacheFile.data = new WeakReference<>(datas);
+                if (TextUtils.isEmpty(chapter.cacheFile)) {
+                    chapter.cacheFile = new File(cacheBookDir, System.currentTimeMillis() + ".txt").getPath();
+                }
+                File file = new File(chapter.cacheFile);
+                if (file.exists() || file.length() > 0) {
+                    fileInputStream = new FileInputStream(file);
+                    inputStreamReader = new InputStreamReader(fileInputStream, "UTF-16LE");
+                    int length = (int) (chapter.endPos - chapter.startPos + 1);
+                    length = Math.max(length, 0);
+                    datas = new char[length];
+                    inputStreamReader.read(datas);
+                    chapter.datas = new WeakReference<>(datas);
+                } else {
+                    fileInputStream = new FileInputStream(bookPath);
+                    String charset = FileUtils.getCharset(bookPath);
+                    charset=TextUtils.isEmpty(charset)?"UTF-8":charset;
+
+                    inputStreamReader = new InputStreamReader(fileInputStream, charset);
+                    inputStreamReader.skip(Math.max(0, chapter.startPos));
+
+                    int length = (int) (chapter.endPos - chapter.startPos + 1);
+                    length = Math.max(length, 0);
+                    datas = new char[length];
+                    inputStreamReader.read(datas);
+                    chapter.datas = new WeakReference<>(datas);
+
+                    writeDataToChapterFile(chapter, datas);
+
+                }
             }
             return datas;
         } catch (Exception e) {
@@ -259,50 +243,94 @@ public class BookUtils {
         return null;
     }
 
+    private static void writeDataToChapterFile(Chapter chapter, char[] datas) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
 
-    public static synchronized List<Chapter> getChapterList() {
-        if (chapterList.isEmpty()) {
+                    OutputStreamWriter outputStreamWriter = new OutputStreamWriter(new FileOutputStream(chapter.cacheFile), "UTF-16LE");
+
+                    outputStreamWriter.write(datas);
+
+                    outputStreamWriter.flush();
+
+                    outputStreamWriter.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+
+
+    }
+
+    private static  boolean generateChapterList() {
+        FileInputStream fileInputStream = null;
+        InputStreamReader inputStreamReader = null;
+        long curTime = System.currentTimeMillis();
+        try {
             long size = 0;
-            Chapter preChapter = new Chapter("序章", 0);
+            Chapter preChapter = new Chapter();
+            preChapter.name = "序章";
+            preChapter.startPos = 0;
             chapterList.add(preChapter);
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < cacheFileList.size(); i++) {
-                char[] charArray = getCharArray(i);
-                if (charArray == null)
+            StringBuilder lineSb = new StringBuilder();
+            String charset = FileUtils.getCharset(bookPath);
+            if (TextUtils.isEmpty(charset)) {
+                charset = "UTF-8";
+            }
+            int read = -1;
+            fileInputStream = new FileInputStream(bookPath);
+            inputStreamReader = new InputStreamReader(fileInputStream, charset);
+            BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+            while (true) {
+                read = inputStreamReader.read();
+                if (read == -1) {
                     break;
-                for (char cr : charArray) {
-                    size++;
-                    long curPos = size - 1;
-                    if (cr == '\n') {//碰到换行符
-                        String str = sb.toString();
-                        if (str.matches(".*第.{1,8}章.*") || str.matches(".*第.{1,8}节.*")) {
-                            preChapter.endPos = Math.max(0, curPos - str.toCharArray().length - 1);
-                            preChapter = new Chapter(str, curPos - str.toCharArray().length);
-                            chapterList.add(preChapter);
-                        }
-                        sb = new StringBuilder();
-                    } else {
-                        sb.append(cr);
-                        if ((curPos - preChapter.startPos+1) >= MAX_CACHE_SIZE) {
-                            preChapter.endPos = Math.max(0, curPos);
-                            preChapter = new Chapter("系统分章", Math.min(curPos + 1, BookUtils.bookLength - 1));
-                            chapterList.add(preChapter);
-                            sb = new StringBuilder();
-                        }
+                }
+                char cr = (char) read;
+                size++;
+                long curPos = size - 1;
+                if (cr == '\n') {//碰到换行符
+                    String str = lineSb.toString();
+                    if (str.matches(".*第.{1,8}章.*") || str.matches(".*第.{1,8}节.*")) {
+                        preChapter.endPos = Math.max(0, curPos - str.toCharArray().length - 1);
+                        preChapter = new Chapter();
+                        preChapter.name = str;
+                        preChapter.startPos = curPos - str.toCharArray().length;
+                        chapterList.add(preChapter);
+                    }
+                    lineSb = new StringBuilder();
+                } else {
+                    lineSb.append(cr);
+                    if ((curPos - preChapter.startPos + 1) >= MAX_CACHE_SIZE) {
+                        preChapter.endPos = Math.max(0, curPos);
+                        preChapter = new Chapter();
+                        preChapter.name = "系统分章";
+                        preChapter.startPos = curPos + 1;
+                        chapterList.add(preChapter);
+                        lineSb = new StringBuilder();
                     }
                 }
             }
-
+            bookLength = size;
             if (!chapterList.isEmpty()) {
                 Chapter lastChapter = chapterList.get(chapterList.size() - 1);
-                lastChapter.endPos = bookLength - 1;
+                lastChapter.endPos = size - 1;
             }
-
-            return chapterList;
-        } else {
-            return chapterList;
+            Log.d("TTTT", "花费时间：" + (System.currentTimeMillis() - curTime) / 1000);
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+        return false;
 
+    }
+
+
+    public static List<Chapter> getChapterList() {
+        return chapterList;
     }
 
 
@@ -314,18 +342,11 @@ public class BookUtils {
 
         public long endPos;
 
+        public String cacheFile;
+
+        public WeakReference<char[]> datas;
+
         public Chapter() {
-        }
-
-        public Chapter(String name, long startPos) {
-            this.name = name;
-            this.startPos = startPos;
-        }
-
-        public Chapter(String name, long startPos, long endPos) {
-            this.name = name;
-            this.startPos = startPos;
-            this.endPos = endPos;
         }
 
         @Override
@@ -334,6 +355,8 @@ public class BookUtils {
                     "name='" + name + '\'' +
                     ", startPos=" + startPos +
                     ", endPos=" + endPos +
+                    ", cacheFile='" + cacheFile + '\'' +
+                    ", datas=" + datas +
                     '}';
         }
     }

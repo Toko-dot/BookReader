@@ -214,9 +214,10 @@ public class PageFactory {
 
 
     private static void seekTo(long position) {
-        mListener.onProgress(BookUtils.bookLength == 0 ? 0 : (int) ((position + 1) / BookUtils.bookLength));
+        mListener.onProgress(BookUtils.bookLength == 0 ? 0 : (int) ((position + 1) * 100f / BookUtils.bookLength));
 
         PageInfo pageInfo = getPageInfo(position);
+
         if (pageInfo == null) {
             threadExecutor.submit(new Runnable() {
                 @Override
@@ -247,6 +248,10 @@ public class PageFactory {
             cleanPage(mCurPage);
             return;
         } else {
+            if (!pageInfo1.show) {
+                startDraw(pageInfo1.endPos + 1);
+                return;
+            }
             drawPage(mCurPage, pageInfo1);
         }
 
@@ -502,10 +507,10 @@ public class PageFactory {
         for (int i = 0; i < chapterArrayList.size(); i++) {
             BookUtils.Chapter chapter = chapterArrayList.get(i);
             long startPos = chapter.startPos;
-            long endPos = Long.MAX_VALUE;
+            long endPos = chapter.endPos;
             while (true) {
                 PageInfo pageInfo = calculationPage(startPos, endPos);
-                if (pageInfo == null || !pageInfo.show) {
+                if (pageInfo == null) {
                     break;
                 } else {
                     insertPageInfo(pageInfo);
