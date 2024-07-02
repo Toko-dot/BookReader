@@ -248,10 +248,6 @@ public class PageFactory {
             cleanPage(mCurPage);
             return;
         } else {
-            if (!pageInfo1.show) {
-                startDraw(pageInfo1.endPos + 1);
-                return;
-            }
             drawPage(mCurPage, pageInfo1);
         }
 
@@ -585,6 +581,12 @@ public class PageFactory {
                     }
                 }
             }
+
+            if (!show){
+                lineList.clear();
+                lineList.add("本章完");
+            }
+
             return new PageInfo(show, startPos, curPos, new WeakReference<>(lineList));
         } catch (Exception e) {
             e.printStackTrace();
