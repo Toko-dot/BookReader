@@ -32,12 +32,12 @@ public class NonePageAnimation extends PageAnimation{
                     int width = pageWidget.getWidth();
                     if (firstDownX < width / 3f) {
                         PageFactory.prePage();
-                        PageFactory.ShowOrHideOptionLayout(1);
+                        PageFactory.showOrHideOptionLayout(1);
                     } else if (firstDownX < width * 2 / 3f) {
-                        PageFactory.ShowOrHideOptionLayout(0);
+                        PageFactory.showOrHideOptionLayout(0);
                     } else {
                         PageFactory.nextPage();
-                        PageFactory.ShowOrHideOptionLayout(1);
+                        PageFactory.showOrHideOptionLayout(1);
                     }
 //                }
                 return true;

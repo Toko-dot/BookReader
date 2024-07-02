@@ -283,7 +283,6 @@ public class BookUtils {
             int read = -1;
             fileInputStream = new FileInputStream(bookPath);
             inputStreamReader = new InputStreamReader(fileInputStream, charset);
-            BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
             while (true) {
                 read = inputStreamReader.read();
                 if (read == -1) {

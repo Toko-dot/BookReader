@@ -13,10 +13,17 @@ public abstract class PageAnimation {
         this.pageWidget = pageWidget;
     }
 
-    public abstract void draw(Canvas canvas);
+    public  void draw(Canvas canvas){
+
+    }
 
 
-    public abstract boolean handleTouchEvent(MotionEvent event);
+    public  boolean handleTouchEvent(MotionEvent event){
+        return true;
+    }
 
+    public  void computeScroll(){
+
+    }
 
 }

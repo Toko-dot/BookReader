@@ -15,6 +15,7 @@
             android:layout_height="match_parent" />
 
 
+
         <LinearLayout
             android:id="@+id/ll_option_bottom"
             android:layout_width="match_parent"
@@ -156,6 +157,18 @@
                     android:button="@null"
                     android:gravity="center"
                     android:text="覆盖"
+                    android:textColor="@color/selector_bottom_option_rb"
+                    android:textSize="16sp" />
+
+
+                <RadioButton
+                    android:id="@+id/rb_page_ani_scroll"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:button="@null"
+                    android:gravity="center"
+                    android:text="滚动"
                     android:textColor="@color/selector_bottom_option_rb"
                     android:textSize="16sp" />
 

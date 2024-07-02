@@ -92,12 +92,12 @@ public class CoverPageAnimation extends PageAnimation {
                 } else if (moveX == 0) {
                     if (firstDownX < pageWidget.getWidth() / 3f) {
                         prePage();
-                        PageFactory.ShowOrHideOptionLayout(1);
+                        PageFactory.showOrHideOptionLayout(1);
                     } else if (firstDownX < pageWidget.getWidth() * 2 / 3f) {
-                        PageFactory.ShowOrHideOptionLayout(0);
+                        PageFactory.showOrHideOptionLayout(0);
                     } else {
                         nextPage();
-                        PageFactory.ShowOrHideOptionLayout(1);
+                        PageFactory.showOrHideOptionLayout(1);
                     }
 
                 } else {

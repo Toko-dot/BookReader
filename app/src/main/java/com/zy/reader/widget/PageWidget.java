@@ -1,6 +1,7 @@
 package com.zy.reader.widget;
 
 import static com.zy.reader.utils.PageConfig.PAGE_ANIMATION_TYPE_COVER;
+import static com.zy.reader.utils.PageConfig.PAGE_ANIMATION_TYPE_SCROLL;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -17,6 +18,7 @@ import com.zy.reader.widget.anim.NonePageAnimation;
 import com.zy.reader.widget.anim.PageAnimation;
 import com.zy.reader.utils.PageConfig;
 import com.zy.reader.utils.PageFactory;
+import com.zy.reader.widget.anim.ScrollPageAnimation;
 
 public class PageWidget extends View {
 
@@ -66,6 +68,9 @@ public class PageWidget extends View {
         switch (pageAnimationType) {
             case PAGE_ANIMATION_TYPE_COVER:
                 pageAnimation = new CoverPageAnimation(this);
+                break;
+            case PAGE_ANIMATION_TYPE_SCROLL:
+                pageAnimation = new ScrollPageAnimation(this);
                 break;
             default:
                 pageAnimation = new NonePageAnimation(this);
@@ -117,5 +122,10 @@ public class PageWidget extends View {
         }
     }
 
-
+    @Override
+    public void computeScroll() {
+        super.computeScroll();
+        if (pageAnimation != null)
+            pageAnimation.computeScroll();
+    }
 }

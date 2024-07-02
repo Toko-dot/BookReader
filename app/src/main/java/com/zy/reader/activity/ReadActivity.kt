@@ -151,6 +151,14 @@ class ReadActivity : AppCompatActivity() {
             }
         }
 
+        binding.rbPageAniScroll.setOnCheckedChangeListener { buttonView, isChecked ->
+            if (isChecked) {
+                PageFactory.changePageAnimationType(
+                    PageConfig.PAGE_ANIMATION_TYPE_SCROLL
+                )
+            }
+        }
+
         binding.rbModule1.setOnCheckedChangeListener { buttonView, isChecked ->
             if (isChecked) {
                 PageFactory.changePageModule(
@@ -192,11 +200,19 @@ class ReadActivity : AppCompatActivity() {
         }
 
 
-        if (PageConfig.pageAnimationType == PageConfig.PAGE_ANIMATION_TYPE_COVER) {
-            binding.rbPageAniCover.isChecked = true
-        } else {
-            binding.rbPageAniNone.isChecked = true
+        when(PageConfig.pageAnimationType){
+            PageConfig.PAGE_ANIMATION_TYPE_NONE->{
+                binding.rbPageAniNone.isChecked = true
+            }
+            PageConfig.PAGE_ANIMATION_TYPE_COVER->{
+                binding.rbPageAniCover.isChecked = true
+            }
+            PageConfig.PAGE_ANIMATION_TYPE_SCROLL->{
+                binding.rbPageAniScroll.isChecked = true
+            }
         }
+
+
 
 
         binding.rbTextSizeMin.setOnCheckedChangeListener { buttonView, isChecked ->

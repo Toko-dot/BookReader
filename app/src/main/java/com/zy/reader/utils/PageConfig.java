@@ -9,7 +9,7 @@ import android.view.WindowManager;
 public class PageConfig {
     public static final int PAGE_ANIMATION_TYPE_NONE = 0;
     public static final int PAGE_ANIMATION_TYPE_COVER = 1;
-
+    public static final int PAGE_ANIMATION_TYPE_SCROLL = 2;
     public static final int PAGE_MODULE_TYPE_1 = 0;
     public static final int PAGE_MODULE_TYPE_2 = 1;
     public static final int PAGE_MODULE_TYPE_3 = 2;
@@ -41,7 +41,7 @@ public class PageConfig {
     //字体大小
     public static float lineSpace = 40;
 
-    public static int pageAnimationType = PAGE_ANIMATION_TYPE_NONE;
+    public static int pageAnimationType = PAGE_ANIMATION_TYPE_SCROLL;
 
     public static int pageModule = PAGE_MODULE_TYPE_1;
 

@@ -312,7 +312,7 @@ public class PageFactory {
         mListener.onMeasureFinish();
     }
 
-    public static void ShowOrHideOptionLayout(int type) {
+    public static void showOrHideOptionLayout(int type) {
         mListener.onShowOrHideOptionLayout(type);
     }
 
